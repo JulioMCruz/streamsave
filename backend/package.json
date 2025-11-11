@@ -1,0 +1,28 @@
+{
+  "name": "streamsave-contracts",
+  "version": "1.0.0",
+  "description": "StreamSave ROSCA smart contracts on Celo",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.ts --network celo",
+    "deploy:mainnet": "hardhat run scripts/deploy.ts --network celo",
+    "test:3wallets": "hardhat run scripts/test-3wallets.ts --network celo"
+  },
+  "keywords": ["rosca", "savings", "celo", "x402", "privacy"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@typechain/ethers-v6": "^0.5.1",
+    "@typechain/hardhat": "^9.1.0",
+    "hardhat": "^2.22.0",
+    "typechain": "^8.3.2",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.0",
+    "dotenv": "^16.4.0"
+  }
+}
