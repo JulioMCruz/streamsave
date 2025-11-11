@@ -41,6 +41,9 @@ export function SignPaymentButton({ groupAddress, amount }: SignPaymentButtonPro
     args: [currentRound ?? 0n, nullifier as `0x${string}`],
   });
 
+  // Show as signed if already tracked on-chain
+  // Note: Users CAN sign multiple vouchers before tracking (x402 MVP limitation)
+  // The smart contract trackContribution() will be the authoritative check
   const signed = Boolean(hasContributed);
 
   const handleSign = async () => {
@@ -49,9 +52,9 @@ export function SignPaymentButton({ groupAddress, amount }: SignPaymentButtonPro
       return;
     }
 
-    // Check if already contributed this round (smart contract check)
+    // Check if already tracked on-chain
     if (hasContributed) {
-      setError('You have already contributed for this round. Wait for the next cycle to contribute again.');
+      setError('You have already tracked a contribution for this round. Wait for the next cycle.');
       return;
     }
 
@@ -117,8 +120,9 @@ export function SignPaymentButton({ groupAddress, amount }: SignPaymentButtonPro
         signature: { v, r, s }
       });
 
-      // Note: The actual prevention of double signing is checked on-chain via roundContributions mapping
-      // Once user calls trackContribution(), they won't be able to sign again for this round
+      // Note: In this MVP, users can technically sign multiple vouchers before tracking
+      // The smart contract's trackContribution() is the authoritative check that prevents double contributions
+      // Only the first tracked contribution per round will be accepted on-chain
       setShowSuccessDialog(true);
     } catch (err: any) {
       console.error('Sign error:', err);
@@ -204,7 +208,7 @@ export function SignPaymentButton({ groupAddress, amount }: SignPaymentButtonPro
             The x402 facilitator will execute the transfer.
           </p>
           <p className="text-xs text-green-600 dark:text-green-500 mt-1 italic">
-            Note: You've already contributed for this round. Once tracked on-chain, you can contribute again in the next cycle.
+            ✅ Contribution tracked on-chain! You can contribute again in the next round.
           </p>
           <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-700">
             <p className="text-sm font-semibold text-green-800 dark:text-green-300 mb-1 flex items-center">
