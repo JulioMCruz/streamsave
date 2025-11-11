@@ -5,7 +5,7 @@ export const CELO_USDC_ADDRESS: Address = '0xcebA9300f2b948710d2653dD7B07f33A8B3
 
 // Deployed StreamSave group addresses (add after deployment)
 export const DEPLOYED_GROUPS: Array<{ address: Address; name: string }> = [
-  // Example: { address: '0x...', name: 'Weekly Savings Circle' }
+  { address: '0x79F72D0E3b4A50D2fc5A2Bdf148c7235BE7A1A88', name: 'Test Group (2min, 0.001 USDC)' }
 ];
 
 // StreamSave.sol ABI (generated from contract)

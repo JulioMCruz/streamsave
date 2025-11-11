@@ -29,14 +29,11 @@ const config: HardhatUserConfig = {
       ].filter(key => key !== undefined) as string[],
       chainId: 42220,
       gas: 10000000, // Increased gas limit for complex transactions
-      gasPrice: 5000000000, // 5 Gwei - adjust based on network conditions
+      // Let Celo network determine gas price dynamically
     },
   },
   etherscan: {
-    apiKey: {
-      alfajores: process.env.CELOSCAN_API_KEY || "",
-      celo: process.env.CELOSCAN_API_KEY || "",
-    },
+    apiKey: process.env.CELOSCAN_API_KEY || "",
     customChains: [
       {
         network: "alfajores",
@@ -55,6 +52,9 @@ const config: HardhatUserConfig = {
         },
       },
     ],
+  },
+  sourcify: {
+    enabled: true
   },
   paths: {
     sources: "./contracts",
