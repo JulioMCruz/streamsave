@@ -5,8 +5,11 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
+    "test:zk": "hardhat run scripts/test-zk-proofs.ts",
     "deploy": "hardhat run scripts/deploy.ts --network celo",
     "deploy:mainnet": "hardhat run scripts/deploy.ts --network celo",
+    "deploy:zk": "hardhat run scripts/deploy-zk.ts --network celo",
+    "deploy:rosca": "hardhat run scripts/deploy-rosca.ts --network celo",
     "test:3wallets": "hardhat run scripts/test-3wallets.ts --network celo"
   },
   "keywords": ["rosca", "savings", "celo", "x402", "privacy"],
