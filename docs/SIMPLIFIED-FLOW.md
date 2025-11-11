@@ -1,14 +1,21 @@
 # StreamSave Pool - Simplified Flow
 
-**Key Principle**: ALL vouchers signed on Day 0, executed monthly by facilitator on app request.
+**Key Principle**: ALL vouchers signed on Day 0, executed periodically by facilitator on app request.
+
+**Note**: This example uses 10 participants with monthly periods, but StreamSave supports:
+- **Participants**: 5-20 people (customizable)
+- **Period**: Weekly, bi-weekly, monthly, or custom intervals
+- **Amount**: Any contribution amount decided by the group
 
 ---
 
 ## Day 0: Pool Creation (All Vouchers Signed Upfront)
 
-### Participants Sign 10 Vouchers Each
+### Example: 10 Participants, $50/month, 10 Months
 
-**Alice** signs and sends 10 vouchers:
+### Participants Sign N Vouchers Each
+
+**Alice** signs and sends 10 vouchers (one per period):
 ```typescript
 // Month 1 contribution
 {
@@ -29,13 +36,14 @@
 // ... Month 3-10 (same pattern)
 ```
 
-**Bob, Carol, ..., Jane** do the same.
+**Bob, Carol, ..., Jane** do the same (each signs N vouchers for N periods).
 
-**Total**: 10 participants × 10 months = **100 contribution vouchers** → Facilitator (stored, NOT executed)
+**Total**: N participants × N periods = **N² contribution vouchers** → Facilitator (stored, NOT executed)
+**Example**: 10 participants × 10 months = **100 contribution vouchers**
 
 ---
 
-### App Signs 10 Payout Vouchers
+### App Signs N Payout Vouchers (One Per Participant)
 
 **App wallet** signs and sends 10 vouchers:
 ```typescript
@@ -58,20 +66,23 @@
 // ... Rounds 3-10 (Carol through Jane)
 ```
 
-**Total**: **10 payout vouchers** → Facilitator (stored, NOT executed)
+**Total**: **N payout vouchers** → Facilitator (stored, NOT executed)
+**Example**: **10 payout vouchers** (one per participant)
 
 ---
 
 ## **Total Vouchers in Facilitator After Day 0**:
-- 100 contribution vouchers (participants → pool)
-- 10 payout vouchers (pool → participants)
-- **110 vouchers** total, all `scheme: "deferred"`, all `settled: false`
+- **N² contribution vouchers** (participants → pool)
+- **N payout vouchers** (pool → participants)
+- **Total: N² + N vouchers**, all `scheme: "deferred"`, all `settled: false`
+
+**Example with 10 participants**: 100 contribution + 10 payout = **110 vouchers** total
 
 ---
 
-## Month 1: App Executes Round 1
+## Period 1: App Executes Round 1
 
-### Request 1: Collect Month 1 Contributions
+### Request 1: Collect Period 1 Contributions
 ```bash
 POST /deferred/settle
 {
@@ -81,13 +92,14 @@ POST /deferred/settle
 ```
 
 **Facilitator**:
-1. Finds 10 vouchers with nonce `*_month_1`
+1. Finds N vouchers with nonce `*_period_1` (or `*_month_1`)
 2. Validates signatures
-3. Aggregates: 10 × $50 = $500
-4. Executes on-chain: Alice→Pool, Bob→Pool, ..., Jane→Pool
+3. Aggregates: N participants × contribution amount
+4. Executes on-chain: All participants→Pool
 5. Marks vouchers as `settled: true`
 
-**Result**: Pool wallet receives $500 ✅
+**Result**: Pool wallet receives total contributions ✅
+**Example**: 10 × $50 = $500
 
 ---
 
@@ -104,16 +116,17 @@ POST /deferred/settle
 **Facilitator**:
 1. Finds 1 voucher with nonce `pool_123_round_1_alice`
 2. Validates signature
-3. Executes on-chain: Pool→Alice ($500)
+3. Executes on-chain: Pool→Alice (total pool amount)
 4. Marks voucher as `settled: true`
 
-**Result**: Alice receives $500 ✅
+**Result**: Alice receives payout ✅
+**Example**: $500 (10 participants × $50)
 
 ---
 
-## Month 2: App Executes Round 2
+## Period 2: App Executes Round 2
 
-### Request 1: Collect Month 2 Contributions
+### Request 1: Collect Period 2 Contributions
 ```bash
 POST /deferred/settle
 {
@@ -123,8 +136,9 @@ POST /deferred/settle
 ```
 
 **Facilitator**:
-- Finds 10 vouchers with nonce `*_month_2`
-- Executes: 10 × $50 = $500 → Pool
+- Finds N vouchers with nonce `*_period_2` (or `*_month_2`)
+- Executes: N participants × contribution amount → Pool
+- **Example**: 10 × $50 = $500 → Pool
 
 ---
 
@@ -140,15 +154,18 @@ POST /deferred/settle
 
 **Facilitator**:
 - Finds voucher `pool_123_round_2_bob`
-- Executes: Pool → Bob ($500)
+- Executes: Pool → Bob (total pool amount)
+- **Example**: Pool → Bob ($500)
 
 ---
 
-## Months 3-10: Same Pattern
+## Periods 3-N: Same Pattern
 
-Each month:
-1. Collect contributions (Month N)
+Each period:
+1. Collect contributions (Period N)
 2. Pay recipient (Round N)
+
+**Continues until all N participants receive payout**
 
 ---
 
@@ -158,10 +175,10 @@ Each month:
 
 **Contribution Vouchers** (participants):
 ```
-alice_pool_123_month_1
-alice_pool_123_month_2
+alice_pool_123_period_1  (or month_1, week_1, etc.)
+alice_pool_123_period_2
 ...
-alice_pool_123_month_10
+alice_pool_123_period_N
 ```
 
 **Payout Vouchers** (app):
@@ -169,8 +186,10 @@ alice_pool_123_month_10
 pool_123_round_1_alice
 pool_123_round_2_bob
 ...
-pool_123_round_10_jane
+pool_123_round_N_lastParticipant
 ```
+
+**Pattern**: Use period identifier (month, week, day) that matches group's chosen frequency
 
 ### Facilitator Filtering
 
@@ -180,12 +199,12 @@ The `/deferred/settle` endpoint fetches vouchers by:
 3. `network` (celo)
 4. `settled: false` (only unsettled vouchers)
 
-**Problem**: How to select only "Month 2" contributions?
+**Problem**: How to select only "Period 2" contributions?
 
 **Solution**: Filter by nonce pattern after fetching:
 ```typescript
 const allVouchers = await getUnsettledVouchers(payer, payee, network);
-const month2Vouchers = allVouchers.filter(v => v.nonce.includes("_month_2"));
+const period2Vouchers = allVouchers.filter(v => v.nonce.includes("_period_2")); // or _month_2, _week_2, etc.
 ```
 
 ---
@@ -223,24 +242,31 @@ Response:
 
 ## Summary
 
-✅ **Day 0**: 110 vouchers signed and stored
-✅ **Month 1**: 2 settlements (collect + pay Alice)
-✅ **Month 2**: 2 settlements (collect + pay Bob)
-✅ **Month 10**: 2 settlements (collect + pay Jane)
+✅ **Day 0**: N² + N vouchers signed and stored (all participants × all periods + payouts)
+✅ **Period 1**: 2 settlements (collect contributions + pay 1st recipient)
+✅ **Period 2**: 2 settlements (collect contributions + pay 2nd recipient)
+✅ **Period N**: 2 settlements (collect contributions + pay Nth recipient)
 
-**Total on-chain transactions**: 20 (10 months × 2 settlements)
-**Without x402**: 200 transactions (10 participants × 10 months × 2 directions)
-**Gas savings**: 90% ✅
+**Total on-chain transactions**: 2N (N periods × 2 settlements per period)
+**Without x402**: 2N² transactions (N participants × N periods × 2 directions)
+**Gas savings**: ~90% (scales with participant count) ✅
+
+**Example with 10 participants, 10 periods**:
+- **With x402**: 20 transactions
+- **Without x402**: 200 transactions
+- **Savings**: 90% (180 fewer transactions)
 
 ---
 
 ## Next Steps
 
-1. ✅ Participants sign 10 vouchers each → `/deferred/verify`
-2. ✅ App signs 10 payout vouchers → `/deferred/verify`
-3. ✅ App calls `/streamsave/pool/execute-round` monthly
+1. ✅ Participants sign N vouchers each → `/deferred/verify`
+2. ✅ App signs N payout vouchers → `/deferred/verify`
+3. ✅ App calls `/streamsave/pool/execute-round` periodically (based on group's chosen frequency)
 4. ✅ Facilitator executes 2 settlements per round
-5. ✅ Repeat until 10 rounds complete
+5. ✅ Repeat until all N rounds complete
+
+**Flexibility**: Works with any number of participants (5-20), any period (weekly to monthly), any amount
 
 **Status**: Architecture confirmed ✅
 **Implementation**: Facilitator endpoints ready 🎯

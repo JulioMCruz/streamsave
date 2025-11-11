@@ -2,15 +2,20 @@
 
 Complete flow showing how StreamSave uses deferred x402 payments for rotating savings pools.
 
+**Note**: This document uses a 10-participant example, but StreamSave supports **flexible configurations**:
+- **Participants**: 5-20 people (N)
+- **Period**: Weekly, bi-weekly, monthly, or custom
+- **Amount**: Any contribution amount decided by the group
+
 ## Two-Signature Architecture
 
 StreamSave Pool requires **TWO sets of x402 vouchers**:
 
 ### 1. Contribution Vouchers (Participants → Pool)
-Signed by **participants** at pool creation
+Signed by **participants** at pool creation (N² total vouchers)
 
 ### 2. Payout Vouchers (Pool → Recipients)
-Signed by **app wallet** after payout order determined
+Signed by **app wallet** after payout order determined (N total vouchers)
 
 ---
 
@@ -47,15 +52,16 @@ Signed by **app wallet** after payout order determined
 │ │ Response: { "voucher_id": "uuid-alice-contrib", ... }       │   │
 │ └──────────────────────────────────────────────────────────────┘   │
 │                                                                     │
-│ Repeat for Bob, Carol, ... (10 participants total)                 │
-│ Result: 10 contribution vouchers stored in facilitator             │
+│ Repeat for Bob, Carol, ... (N participants total)                  │
+│ Result: N² contribution vouchers stored in facilitator             │
+│ Example: 10 participants × 10 periods = 100 vouchers              │
 └─────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────┐
 │ PHASE 2: Payout Order Selection (Day 1)                            │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│ Step 2.1: App Determines Payout Order                              │
+│ Step 2.1: Group Determines Payout Order                            │
 │ ┌──────────────────────────────────────────────────────────────┐   │
 │ │ Random: Provably fair shuffle                                │   │
 │ │ Voting: Quadratic voting (community decides)                 │   │
@@ -88,14 +94,15 @@ Signed by **app wallet** after payout order determined
 │ │   "scheme": "deferred"                                       │   │
 │ │ }                                                            │   │
 │ │                                                              │   │
-│ │ Repeat for all 10 rounds (Bob, Carol, ...)                  │   │
+│ │ Repeat for all N rounds (Bob, Carol, ...)                   │   │
 │ └──────────────────────────────────────────────────────────────┘   │
 │                                                                     │
-│ Result: 10 payout vouchers stored (1 per round)                    │
+│ Result: N payout vouchers stored (1 per round)                     │
+│ Example: 10 payout vouchers                                        │
 └─────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│ PHASE 3: Monthly Execution (Months 1-10)                           │
+│ PHASE 3: Periodic Execution (Periods 1-N)                          │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │ Month 1 (Feb 1, 2025): Alice's Turn                                │
