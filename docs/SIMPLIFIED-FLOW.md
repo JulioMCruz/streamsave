@@ -1,4 +1,4 @@
-# StreamSave ROSCA - Simplified Flow
+# StreamSave Pool - Simplified Flow
 
 **Key Principle**: ALL vouchers signed on Day 0, executed monthly by facilitator on app request.
 

@@ -1,10 +1,10 @@
-# StreamSave ROSCA Flow - Corrected Architecture
+# StreamSave Pool Flow - Corrected Architecture
 
 Complete flow showing how StreamSave uses deferred x402 payments for rotating savings pools.
 
 ## Two-Signature Architecture
 
-StreamSave ROSCA requires **TWO sets of x402 vouchers**:
+StreamSave Pool requires **TWO sets of x402 vouchers**:
 
 ### 1. Contribution Vouchers (Participants → Pool)
 Signed by **participants** at pool creation
@@ -253,7 +253,7 @@ The `/streamsave/*` endpoints now focus on **orchestration**, not settlement:
 
 ---
 
-## Example: 10-Person ROSCA ($50/month)
+## Example: 10-Person StreamSave Pool ($50/month)
 
 ### Pool Configuration
 ```json
