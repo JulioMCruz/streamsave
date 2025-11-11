@@ -6,13 +6,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import Link from 'next/link';
 import { DEPLOYED_GROUPS } from '@/lib/contracts/StreamSave';
 import { GroupCard } from '@/components/groups/GroupCard';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { CreateGroupDialog } from '@/components/groups/CreateGroupDialog';
 
 export default function Dashboard() {
   const { address, isConnected } = useAccount();
@@ -106,72 +100,7 @@ export default function Dashboard() {
       </div>
 
       {/* Create Group Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-blue-600">
-              <span className="text-2xl">🚀</span>
-              Create New StreamSave Group
-            </DialogTitle>
-            <DialogDescription asChild>
-              <div className="space-y-4 pt-4">
-                <p className="text-base">
-                  StreamSave groups are deployed as individual smart contracts using Hardhat.
-                </p>
-
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-3">
-                    📋 Deployment Steps:
-                  </p>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm font-semibold text-blue-700 dark:text-blue-400 mb-1">
-                        1. Navigate to contracts directory:
-                      </p>
-                      <code className="block bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3 py-2 rounded text-sm">
-                        cd apps/streamsave/contracts
-                      </code>
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-semibold text-blue-700 dark:text-blue-400 mb-1">
-                        2. Deploy to Celo Mainnet:
-                      </p>
-                      <code className="block bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3 py-2 rounded text-sm">
-                        npx hardhat run scripts/deploy-test.ts --network celo
-                      </code>
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-semibold text-blue-700 dark:text-blue-400 mb-1">
-                        3. Add contract address to frontend:
-                      </p>
-                      <code className="block bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3 py-2 rounded text-sm whitespace-pre-wrap">
-                        {`Edit: frontend/lib/contracts/StreamSave.ts
-Add new address to DEPLOYED_GROUPS array`}
-                      </code>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                  <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                    <strong>⚠️ Note:</strong> Make sure you have configured your .env file with PRIVATE_KEY and CELOSCAN_API_KEY before deploying.
-                  </p>
-                </div>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end">
-            <button
-              onClick={() => setShowCreateDialog(false)}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:shadow-lg transition-all"
-            >
-              Got it!
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <CreateGroupDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
     </div>
   );
 }
