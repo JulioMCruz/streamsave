@@ -4,6 +4,13 @@ import { useState } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { StreamSaveABI } from '@/lib/contracts/StreamSave';
 import { generateNullifierFromAddress } from '@/lib/utils/nullifier';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface TrackContributionButtonProps {
   groupAddress: string;
@@ -16,10 +23,11 @@ export function TrackContributionButton({ groupAddress, amount }: TrackContribut
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
   const [customNullifier, setCustomNullifier] = useState('');
   const [useCustom, setUseCustom] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
 
   const handleTrack = async () => {
     if (!address) {
-      alert('Please connect your wallet first');
+      setShowErrorDialog(true);
       return;
     }
 
@@ -152,6 +160,32 @@ export function TrackContributionButton({ groupAddress, amount }: TrackContribut
       <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
         Step 2: Record your contribution on the smart contract
       </p>
+
+      <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <span className="text-2xl">⚠️</span>
+              Wallet Not Connected
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="pt-4">
+                <p className="text-base">
+                  Please connect your wallet to track your contribution on-chain.
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <button
+              onClick={() => setShowErrorDialog(false)}
+              className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:shadow-lg transition-all"
+            >
+              Close
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

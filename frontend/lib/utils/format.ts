@@ -9,6 +9,16 @@ export function formatUSDC(amount: bigint | undefined): string {
 }
 
 /**
+ * Format USDC amount with 3 decimals
+ */
+export function formatUSDC3(amount: bigint | undefined): string {
+  if (!amount) return '0.000';
+  const fullValue = formatUnits(amount, 6);
+  const numValue = parseFloat(fullValue);
+  return numValue.toFixed(3);
+}
+
+/**
  * Format cycle duration in seconds to human-readable string
  */
 export function formatDuration(seconds: bigint | undefined): string {

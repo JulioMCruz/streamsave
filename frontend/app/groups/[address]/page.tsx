@@ -5,7 +5,7 @@ import { useAccount, useReadContract } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import Link from 'next/link';
 import { StreamSaveABI, CELO_USDC_ADDRESS } from '@/lib/contracts/StreamSave';
-import { formatUSDC, formatDuration, formatAddress, formatDate } from '@/lib/utils/format';
+import { formatUSDC, formatUSDC3, formatDuration, formatAddress, formatDate } from '@/lib/utils/format';
 import { SignPaymentButton } from '@/components/payments/SignPaymentButton';
 import { TrackContributionButton } from '@/components/payments/TrackContributionButton';
 import { usePayoutEvents } from '@/lib/hooks/usePayoutEvents';
@@ -268,7 +268,7 @@ export default function GroupDetail() {
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Total Contributed</span>
                     <span className="font-semibold text-gray-800 dark:text-gray-100">
-                      {formatUSDC(totalContributed)} USDC
+                      {formatUSDC3(totalContributed)} USDC
                     </span>
                   </div>
                   <div className="flex justify-between">
