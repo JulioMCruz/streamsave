@@ -1,13 +1,25 @@
 'use client';
 
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount } from 'wagmi';
+import Link from 'next/link';
 
 export default function Home() {
+  const { isConnected } = useAccount();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-16">
         <header className="text-center mb-16">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end gap-4 mb-4">
+            {isConnected && (
+              <Link
+                href="/dashboard"
+                className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 px-6 py-2 rounded-lg font-semibold hover:shadow-lg transition-shadow"
+              >
+                Dashboard
+              </Link>
+            )}
             <ConnectButton />
           </div>
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
@@ -62,7 +74,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="text-center">
+            <div className="text-center space-x-4">
               <ConnectButton.Custom>
                 {({ openConnectModal }) => (
                   <button
