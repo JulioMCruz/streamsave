@@ -74,7 +74,7 @@ export default function Dashboard() {
                   cd apps/streamsave/contracts
                 </p>
                 <p className="font-mono text-sm text-green-600 dark:text-green-400">
-                  npm run deploy:rosca -- --network alfajores
+                  npx hardhat run scripts/deploy-test.ts --network celo
                 </p>
               </div>
             </div>
