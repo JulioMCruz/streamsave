@@ -18,12 +18,21 @@ export function CreateGroupDialog({ open, onOpenChange }: CreateGroupDialogProps
   const [participantCount, setParticipantCount] = useState(3);
   const [participantAddresses, setParticipantAddresses] = useState<string[]>(['', '', '']);
   const [contributionAmount, setContributionAmount] = useState('0.001');
-  const [cycleDuration, setCycleDuration] = useState('2'); // in minutes
+  const [cycleDuration, setCycleDuration] = useState('2');
+  const [timeUnit, setTimeUnit] = useState<'minutes' | 'hours' | 'days' | 'weeks' | 'months'>('minutes');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [validationError, setValidationError] = useState<string>('');
 
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  // Prepopulate first participant with creator's address when dialog opens
+  useEffect(() => {
+    if (open && address && participantAddresses[0] === '') {
+      const newAddresses = [address, ...participantAddresses.slice(1)];
+      setParticipantAddresses(newAddresses);
+    }
+  }, [open, address]);
 
   // Watch for transaction success with useEffect
   useEffect(() => {
@@ -37,9 +46,13 @@ export function CreateGroupDialog({ open, onOpenChange }: CreateGroupDialogProps
   // Update participant address array when count changes
   const handleParticipantCountChange = (count: number) => {
     setParticipantCount(count);
-    const newAddresses = Array(count).fill('').map((_, idx) =>
-      participantAddresses[idx] || ''
-    );
+    const newAddresses = Array(count).fill('').map((_, idx) => {
+      // Keep existing addresses, prepopulate first with creator if empty
+      if (idx === 0 && !participantAddresses[idx] && address) {
+        return address;
+      }
+      return participantAddresses[idx] || '';
+    });
     setParticipantAddresses(newAddresses);
     setValidationError('');
   };
@@ -107,7 +120,16 @@ export function CreateGroupDialog({ open, onOpenChange }: CreateGroupDialogProps
       });
 
       const contributionAmountUSDC = parseUnits(contributionAmount, 6); // USDC has 6 decimals
-      const cycleDurationSeconds = BigInt(parseInt(cycleDuration) * 60); // Convert minutes to seconds
+
+      // Convert cycle duration to seconds based on selected time unit
+      const timeMultipliers = {
+        minutes: 60,
+        hours: 60 * 60,
+        days: 60 * 60 * 24,
+        weeks: 60 * 60 * 24 * 7,
+        months: 60 * 60 * 24 * 30, // Approximate 30 days
+      };
+      const cycleDurationSeconds = BigInt(parseInt(cycleDuration) * timeMultipliers[timeUnit]);
 
       writeContract({
         address: FACTORY_ADDRESS,
@@ -162,7 +184,7 @@ export function CreateGroupDialog({ open, onOpenChange }: CreateGroupDialogProps
                 {participantAddresses.map((addr, index) => (
                   <div key={index}>
                     <label className="block text-xs text-gray-500 mb-1">
-                      Participant {index + 1}
+                      Participant {index + 1} {index === 0 && <span className="text-green-600 dark:text-green-400">(You - Creator)</span>}
                     </label>
                     <input
                       type="text"
@@ -176,7 +198,7 @@ export function CreateGroupDialog({ open, onOpenChange }: CreateGroupDialogProps
                 ))}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Enter the wallet address for each participant. These addresses will be used to generate privacy-preserving nullifiers.
+                Participant 1 is prepopulated with your address (you can change it). Enter wallet addresses for all other participants.
               </p>
             </div>
 
@@ -202,18 +224,35 @@ export function CreateGroupDialog({ open, onOpenChange }: CreateGroupDialogProps
             {/* Cycle Duration */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Cycle Duration (minutes)
+                Cycle Duration
               </label>
-              <input
-                type="number"
-                min="2"
-                value={cycleDuration}
-                onChange={(e) => setCycleDuration(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                required
-              />
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  value={cycleDuration}
+                  onChange={(e) => setCycleDuration(e.target.value)}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  required
+                />
+                <select
+                  value={timeUnit}
+                  onChange={(e) => setTimeUnit(e.target.value as typeof timeUnit)}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value="minutes">Minutes</option>
+                  <option value="hours">Hours</option>
+                  <option value="days">Days</option>
+                  <option value="weeks">Weeks</option>
+                  <option value="months">Months</option>
+                </select>
+              </div>
               <p className="text-xs text-gray-500 mt-1">
-                Time between each payout (minimum 2 minutes)
+                {timeUnit === 'minutes' && 'For testing: minimum 2 minutes (contract enforces minimum 2 minutes total)'}
+                {timeUnit === 'hours' && 'Time between each payout (e.g., 24 hours = daily)'}
+                {timeUnit === 'days' && 'Time between each payout (e.g., 7 days = weekly)'}
+                {timeUnit === 'weeks' && 'Time between each payout (e.g., 1 week, 2 weeks)'}
+                {timeUnit === 'months' && 'Time between each payout (e.g., 1 month = ~30 days)'}
               </p>
             </div>
 

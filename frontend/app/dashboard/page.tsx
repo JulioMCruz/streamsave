@@ -1,16 +1,41 @@
 'use client';
 
-import { useState } from 'react';
-import { useAccount } from 'wagmi';
+import { useState, useEffect } from 'react';
+import { useAccount, useReadContract } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import Link from 'next/link';
-import { DEPLOYED_GROUPS } from '@/lib/contracts/StreamSave';
+import { FACTORY_V3_ADDRESS, StreamSaveFactoryV3ABI } from '@/lib/contracts/StreamSaveFactoryV3';
 import { GroupCard } from '@/components/groups/GroupCard';
-import { CreateGroupDialog } from '@/components/groups/CreateGroupDialog';
+import { CreateGroupDialogV2 } from '@/components/groups/CreateGroupDialogV2';
+import { Address } from 'viem';
 
 export default function Dashboard() {
   const { address, isConnected } = useAccount();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [userGroups, setUserGroups] = useState<Address[]>([]);
+
+  // Fetch groups where user is a participant (includes created and invited groups)
+  const { data: participantGroups, refetch } = useReadContract({
+    address: FACTORY_V3_ADDRESS,
+    abi: StreamSaveFactoryV3ABI,
+    functionName: 'getUserGroups',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address,
+    }
+  });
+
+  useEffect(() => {
+    if (participantGroups && Array.isArray(participantGroups)) {
+      setUserGroups(participantGroups as Address[]);
+    }
+  }, [participantGroups]);
+
+  // Refetch when dialog closes (new group created)
+  useEffect(() => {
+    if (!showCreateDialog) {
+      refetch();
+    }
+  }, [showCreateDialog, refetch]);
 
   if (!isConnected) {
     return (
@@ -59,32 +84,26 @@ export default function Dashboard() {
           </div>
 
           {/* Groups Grid */}
-          {DEPLOYED_GROUPS.length === 0 ? (
+          {userGroups.length === 0 ? (
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-12 text-center">
               <div className="text-6xl mb-4">💸</div>
               <h3 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">
                 No Groups Yet
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
-                Deploy a StreamSave contract using the Hardhat CLI to get started.
-                Once deployed, add the contract address to the frontend configuration.
+                Create a new calendar-based StreamSave group to get started with your savings journey.
               </p>
-              <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 text-left max-w-xl mx-auto">
-                <p className="font-mono text-sm text-gray-700 dark:text-gray-300">
-                  # Deploy a new StreamSave group
-                </p>
-                <p className="font-mono text-sm text-green-600 dark:text-green-400">
-                  cd apps/streamsave/contracts
-                </p>
-                <p className="font-mono text-sm text-green-600 dark:text-green-400">
-                  npx hardhat run scripts/deploy-test.ts --network celo
-                </p>
-              </div>
+              <button
+                onClick={() => setShowCreateDialog(true)}
+                className="bg-gradient-to-r from-green-600 to-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-shadow"
+              >
+                + Create Your First Group
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {DEPLOYED_GROUPS.map((group) => (
-                <GroupCard key={group.address} address={group.address} name={group.name} />
+              {userGroups.map((groupAddress) => (
+                <GroupCard key={groupAddress} address={groupAddress} name="Calendar-Based Group" />
               ))}
             </div>
           )}
@@ -99,8 +118,12 @@ export default function Dashboard() {
         </footer>
       </div>
 
-      {/* Create Group Dialog */}
-      <CreateGroupDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
+      {/* Create Group Dialog V2 (Calendar-based) */}
+      <CreateGroupDialogV2
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onGroupCreated={refetch}
+      />
     </div>
   );
 }
