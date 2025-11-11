@@ -1,9 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount, useSignTypedData } from 'wagmi';
+import { useAccount, useSignTypedData, useReadContract } from 'wagmi';
 import { maxUint256, parseSignature } from 'viem';
-import { CELO_USDC_ADDRESS } from '@/lib/contracts/StreamSave';
+import { CELO_USDC_ADDRESS, StreamSaveABI } from '@/lib/contracts/StreamSave';
+import { generateNullifierFromAddress } from '@/lib/utils/nullifier';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface SignPaymentButtonProps {
   groupAddress: string;
@@ -14,12 +22,36 @@ export function SignPaymentButton({ groupAddress, amount }: SignPaymentButtonPro
   const { address, chainId } = useAccount();
   const { signTypedDataAsync } = useSignTypedData();
   const [loading, setLoading] = useState(false);
-  const [signed, setSigned] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+
+  // Get current round
+  const { data: currentRound } = useReadContract({
+    address: groupAddress as `0x${string}`,
+    abi: StreamSaveABI,
+    functionName: 'currentRound',
+  });
+
+  // Check if user has already contributed this round (on-chain check)
+  const nullifier = address ? generateNullifierFromAddress(address) : '0x0';
+  const { data: hasContributed } = useReadContract({
+    address: groupAddress as `0x${string}`,
+    abi: StreamSaveABI,
+    functionName: 'roundContributions',
+    args: [currentRound ?? 0n, nullifier as `0x${string}`],
+  });
+
+  const signed = Boolean(hasContributed);
 
   const handleSign = async () => {
     if (!address) {
       setError('Please connect your wallet first');
+      return;
+    }
+
+    // Check if already contributed this round (smart contract check)
+    if (hasContributed) {
+      setError('You have already contributed for this round. Wait for the next cycle to contribute again.');
       return;
     }
 
@@ -85,8 +117,9 @@ export function SignPaymentButton({ groupAddress, amount }: SignPaymentButtonPro
         signature: { v, r, s }
       });
 
-      setSigned(true);
-      alert(`✅ Payment authorized successfully!\n\nNext step: The x402 facilitator will execute the transfer.\nThen call "Track Contribution" to record your payment on-chain.`);
+      // Note: The actual prevention of double signing is checked on-chain via roundContributions mapping
+      // Once user calls trackContribution(), they won't be able to sign again for this round
+      setShowSuccessDialog(true);
     } catch (err: any) {
       console.error('Sign error:', err);
       setError(err.message || 'Failed to sign payment authorization');
@@ -163,19 +196,66 @@ export function SignPaymentButton({ groupAddress, amount }: SignPaymentButtonPro
       )}
 
       {signed && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
-          <p className="text-sm text-green-700 dark:text-green-400">
-            ✅ Payment voucher signed! The x402 facilitator will cash it at the right time.
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+          <p className="text-sm text-green-700 dark:text-green-400 font-semibold mb-2">
+            ✅ Payment voucher signed successfully!
           </p>
-          <p className="text-xs text-green-600 dark:text-green-500 mt-1">
-            Next: Once cashed, track your contribution on-chain.
+          <p className="text-sm text-green-600 dark:text-green-500">
+            The x402 facilitator will execute the transfer.
           </p>
+          <p className="text-xs text-green-600 dark:text-green-500 mt-1 italic">
+            Note: You can only sign once per group to prevent duplicate vouchers.
+          </p>
+          <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-700">
+            <p className="text-sm font-semibold text-green-800 dark:text-green-300 mb-1 flex items-center">
+              <span className="text-lg mr-2">👇</span>
+              Next Step:
+            </p>
+            <p className="text-sm text-green-700 dark:text-green-400">
+              Click <strong>"Track Contribution On-Chain"</strong> below to record your payment
+            </p>
+          </div>
         </div>
       )}
 
       <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
         Step 1: Sign x402 payment voucher (gasless, like writing a check)
       </p>
+
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <span className="text-2xl">✅</span>
+              Payment Authorized Successfully!
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-3 pt-4">
+                <p className="text-base">
+                  Your payment voucher has been signed successfully.
+                </p>
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">
+                    Next Steps:
+                  </p>
+                  <ol className="text-sm text-blue-700 dark:text-blue-400 space-y-2 ml-4 list-decimal">
+                    <li>The x402 facilitator will execute the USDC transfer</li>
+                    <li>Once completed, click "Track Contribution" to record your payment on-chain</li>
+                  </ol>
+                </div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <button
+              onClick={() => setShowSuccessDialog(false)}
+              className="bg-gradient-to-r from-green-600 to-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:shadow-lg transition-all"
+            >
+              Got it!
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
