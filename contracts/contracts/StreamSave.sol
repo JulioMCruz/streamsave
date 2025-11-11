@@ -119,10 +119,10 @@ contract StreamSaveROSCA is ReentrancyGuard {
         uint256 _totalParticipants
     ) {
         require(_token != address(0), "Invalid token");
-        require(_totalParticipants >= 5 && _totalParticipants <= 20, "Invalid participant count");
+        require(_totalParticipants >= 3 && _totalParticipants <= 20, "Invalid participant count");
         require(_contributionAmount > 0, "Invalid contribution amount");
         require(_streamRate > 0, "Invalid stream rate");
-        require(_cycleDuration >= 1 days, "Cycle too short");
+        require(_cycleDuration >= 2 minutes, "Cycle too short");
 
         token = _token;
         merkleRoot = _merkleRoot;
