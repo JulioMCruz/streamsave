@@ -16,7 +16,7 @@ export function formatDuration(seconds: bigint | undefined): string {
   const s = Number(seconds);
 
   // Common durations
-  if (s === 300) return '5 minutes';
+  if (s === 120) return '2 minutes';
   if (s === 3600) return '1 hour';
   if (s === 86400) return 'Daily';
   if (s === 604800) return 'Weekly';

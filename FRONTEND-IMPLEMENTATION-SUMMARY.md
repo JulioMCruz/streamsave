@@ -17,7 +17,7 @@
 - RainbowKit v2.1.0 for wallet connection
 - wagmi v2.9.0 for contract interactions
 - viem v2.13.0 for Ethereum utilities
-- Configured for Celo mainnet (42220) and Alfajores testnet (44787)
+- Configured for Celo mainnet (42220) - **USDC with EIP-3009 only available on mainnet**
 
 ### 3. **Contract Integration** ✅
 **File:** `lib/contracts/StreamSave.ts`
@@ -157,10 +157,11 @@ apps/streamsave/frontend/
 
 ### To Complete MVP (Hour 9-10):
 
-1. **Deploy Contract to Testnet**
+1. **Deploy Contract to Celo Mainnet (with test amounts)**
    ```bash
    cd apps/streamsave/contracts
-   npm run deploy:rosca -- --network alfajores
+   npm run deploy:rosca -- --network celo
+   # Use 0.001 USDC and 2-minute cycles for testing
    ```
 
 2. **Add Contract Address to Frontend**
@@ -178,13 +179,14 @@ apps/streamsave/frontend/
    ```
    Open http://localhost:3000
 
-4. **Test Payment Flow**
-   - Connect wallet (MetaMask on Alfajores)
+4. **Test Payment Flow (on Celo Mainnet)**
+   - Connect wallet (MetaMask on Celo Mainnet)
+   - Ensure 0.001 USDC in test wallets
    - Navigate to dashboard
    - Click on group
    - Sign payment voucher
    - Track contribution
-   - Verify auto-payout when all contribute
+   - Verify auto-payout after 2-minute cycle when all contribute
 
 5. **Deploy to Vercel**
    ```bash
@@ -233,8 +235,9 @@ For the 10-hour MVP, we intentionally kept it simple:
 - **Language:** TypeScript
 - **Web3:** wagmi v2 + viem v2 + RainbowKit v2
 - **Styling:** Tailwind CSS
-- **Network:** Celo (mainnet 42220, testnet Alfajores 44787)
+- **Network:** Celo Mainnet (42220) - **EIP-3009 USDC only on mainnet**
 - **Token:** USDC (0xcebA9300f2b948710d2653dD7B07f33A8B32118C)
+- **Testing:** 0.001 USDC with 2-minute cycles
 
 ---
 
@@ -271,13 +274,15 @@ For the 10-hour MVP, we intentionally kept it simple:
 ## 📝 Testing Checklist
 
 Before demo:
-- [ ] Connect wallet to Alfajores testnet
+- [ ] Connect wallet to Celo Mainnet
+- [ ] Ensure 0.001 USDC in 3 test wallets
 - [ ] View dashboard
 - [ ] Click on test group
 - [ ] Read x402 voucher explanation
 - [ ] Sign payment voucher
 - [ ] Track contribution
 - [ ] Verify event logs
+- [ ] Wait 2 minutes for cycle
 - [ ] Check auto-payout (when all contribute)
 
 ---

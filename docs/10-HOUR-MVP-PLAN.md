@@ -2,7 +2,8 @@
 
 **Time Constraint:** 10 hours total
 **Target:** Working prototype with core functionality
-**Network:** Celo Alfajores (testnet)
+**Network:** Celo Mainnet (42220) - USDC with EIP-3009 only available on mainnet
+**Testing Amounts:** 0.001 USDC for small-scale testing
 
 ---
 
@@ -21,7 +22,7 @@
 
 **Flexible Cycle Duration:**
 The `cycleDuration` parameter (in seconds) is **user-defined** at deployment:
-- **5 minutes:** 300 seconds (for testing/demo)
+- **2 minutes:** 120 seconds (for mainnet testing)
 - **Daily:** 86400 seconds
 - **Weekly:** 604800 seconds (7 days)
 - **Monthly:** 2592000 seconds (30 days)
@@ -41,17 +42,17 @@ constructor(
 
 **Example Deployments:**
 ```typescript
-// Demo/Testing (5 minute cycles)
+// Mainnet Testing (2 minute cycles with tiny amounts)
 await StreamSave.deploy(
     USDC_ADDRESS,
     merkleRoot,
-    ethers.parseUnits("10", 6),  // 10 USDC
-    0,                             // No streaming
-    300,                           // 5 minutes
-    5                              // 5 participants
+    ethers.parseUnits("0.001", 6),  // 0.001 USDC (tiny test amount)
+    0,                               // No streaming
+    120,                             // 2 minutes
+    3                                // 3 participants for quick testing
 );
 
-// Weekly savings circle
+// Production Weekly savings circle
 await StreamSave.deploy(
     USDC_ADDRESS,
     merkleRoot,
@@ -61,7 +62,7 @@ await StreamSave.deploy(
     10                             // 10 participants
 );
 
-// Monthly savings circle
+// Production Monthly savings circle
 await StreamSave.deploy(
     USDC_ADDRESS,
     merkleRoot,
@@ -212,7 +213,7 @@ function formatDuration(seconds: bigint | undefined): string {
   if (!seconds) return 'Loading...';
   const s = Number(seconds);
 
-  if (s === 300) return '5 minutes';
+  if (s === 120) return '2 minutes';
   if (s === 86400) return 'Daily';
   if (s === 604800) return 'Weekly';
   if (s === 2592000) return 'Monthly';
@@ -266,8 +267,8 @@ export function SignPaymentButton({ groupAddress, amount }) {
         domain: {
           name: 'USD Coin',
           version: '2',
-          chainId: 44787, // Alfajores
-          verifyingContract: '0x...' // USDC on Alfajores
+          chainId: 42220, // Celo Mainnet
+          verifyingContract: '0xcebA9300f2b948710d2653dD7B07f33A8B32118C' // USDC on Celo Mainnet
         },
         types: {
           TransferWithAuthorization: [
@@ -408,7 +409,9 @@ export function usePayoutEvents(groupAddress: string) {
 1. **Contract Deployment**
    ```bash
    cd apps/streamsave/contracts
-   npm run deploy:rosca -- --network alfajores
+   npm run deploy:rosca -- --network celo
+   # Note: Deploys to Celo Mainnet (only network with EIP-3009 USDC)
+   # Use 0.001 USDC amounts for testing
    # Note the deployed address
    ```
 
@@ -539,7 +542,7 @@ Thank you!"
 ## Success Criteria
 
 **Minimum Viable Demo:**
-1. ✅ Contract deployed on Alfajores testnet
+1. ✅ Contract deployed on Celo Mainnet (with 0.001 USDC test amounts)
 2. ✅ Frontend deployed and accessible
 3. ✅ Can connect wallet
 4. ✅ Can view group details including cycle duration
@@ -578,9 +581,9 @@ Thank you!"
 ## Quick Reference Commands
 
 ```bash
-# Contract deployment
+# Contract deployment (MAINNET only - USDC with EIP-3009)
 cd apps/streamsave/contracts
-npm run deploy:rosca -- --network alfajores
+npm run deploy:rosca -- --network celo
 
 # Frontend dev
 cd apps/streamsave/frontend
@@ -589,8 +592,8 @@ npm run dev
 # Frontend deployment
 vercel --prod
 
-# Test contract on Celoscan
-https://alfajores.celoscan.io/address/<CONTRACT_ADDRESS>
+# Test contract on Celoscan (MAINNET)
+https://celoscan.io/address/<CONTRACT_ADDRESS>
 ```
 
 ---
