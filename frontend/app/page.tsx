@@ -75,16 +75,25 @@ export default function Home() {
             </div>
 
             <div className="text-center space-x-4">
-              <ConnectButton.Custom>
-                {({ openConnectModal }) => (
-                  <button
-                    onClick={openConnectModal}
-                    className="bg-gradient-to-r from-green-600 to-blue-600 text-white font-semibold py-4 px-8 rounded-xl text-lg hover:shadow-lg transition-shadow"
-                  >
-                    Connect Wallet to Start
-                  </button>
-                )}
-              </ConnectButton.Custom>
+              {isConnected ? (
+                <Link
+                  href="/dashboard"
+                  className="inline-block bg-gradient-to-r from-green-600 to-blue-600 text-white font-semibold py-4 px-8 rounded-xl text-lg hover:shadow-lg transition-shadow"
+                >
+                  Go to Dashboard
+                </Link>
+              ) : (
+                <ConnectButton.Custom>
+                  {({ openConnectModal }) => (
+                    <button
+                      onClick={openConnectModal}
+                      className="bg-gradient-to-r from-green-600 to-blue-600 text-white font-semibold py-4 px-8 rounded-xl text-lg hover:shadow-lg transition-shadow"
+                    >
+                      Connect Wallet to Start
+                    </button>
+                  )}
+                </ConnectButton.Custom>
+              )}
             </div>
           </div>
 
