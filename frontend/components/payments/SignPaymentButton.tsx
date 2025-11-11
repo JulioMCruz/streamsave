@@ -204,7 +204,7 @@ export function SignPaymentButton({ groupAddress, amount }: SignPaymentButtonPro
             The x402 facilitator will execute the transfer.
           </p>
           <p className="text-xs text-green-600 dark:text-green-500 mt-1 italic">
-            Note: You can only sign once per group to prevent duplicate vouchers.
+            Note: You've already contributed for this round. Once tracked on-chain, you can contribute again in the next cycle.
           </p>
           <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-700">
             <p className="text-sm font-semibold text-green-800 dark:text-green-300 mb-1 flex items-center">
