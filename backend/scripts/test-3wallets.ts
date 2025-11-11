@@ -116,7 +116,7 @@ async function main() {
   }
 
   // Create pool
-  console.log("\n🏊 Creating ROSCA pool...");
+  console.log("\n🏊 Creating StreamSave pool...");
   console.log(`  Contribution: ${ethers.formatUnits(CONTRIBUTION_AMOUNT, 6)} USDC per round`);
   console.log(`  Stream Rate: ${ethers.formatUnits(STREAM_RATE * 3600n, 6)} USDC/hour`);
   console.log(`  Cycle Duration: ${CYCLE_DURATION / 86400} days`);

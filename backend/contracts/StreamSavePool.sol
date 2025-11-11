@@ -99,7 +99,7 @@ contract StreamSavePool is ReentrancyGuard, Ownable {
     // ============ Pool Management ============
 
     /**
-     * @notice Create a new ROSCA pool
+     * @notice Create a new StreamSave pool
      * @param _merkleRoot Merkle root of participant nullifiers (privacy)
      * @param _contributionAmount Required contribution per cycle
      * @param _streamRate Tokens per second streaming rate

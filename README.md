@@ -1,26 +1,26 @@
-# StreamSave - Decentralized ROSCA on Celo
+# StreamSave - Decentralized Savings Pools on Celo
 
 **Community savings pools powered by blockchain transparency and x402 deferred payments**
 
-StreamSave brings traditional Rotating Savings and Credit Associations (ROSCAs) to the Celo blockchain, enabling transparent, trustless group savings without requiring a central authority.
+StreamSave brings traditional rotating savings and credit associations to the Celo blockchain, enabling transparent, trustless group savings without requiring a central authority.
 
 ---
 
 ## 🎯 Problem
 
-Traditional ROSCAs rely on trust and social enforcement:
+Traditional savings pools rely on trust and social enforcement:
 - **Trust Risk**: Members may default or disappear after receiving payout
 - **Transparency Issues**: Manual tracking of contributions and payouts
 - **Geographic Limitations**: Requires physical meetings or manual coordination
 - **No Legal Recourse**: Informal agreements with no enforcement mechanism
 
-**Example**: 10 friends each contribute $50/month. Each month, one member receives the full $500 pool. But what happens if someone stops contributing after receiving their payout?
+**Example**: A group of friends each contribute a fixed amount regularly. Each period, one member receives the full pool amount. But what happens if someone stops contributing after receiving their payout?
 
 ---
 
 ## 💡 Solution
 
-StreamSave uses blockchain smart contracts and cryptographic signatures to enforce ROSCA rules:
+StreamSave uses blockchain smart contracts and cryptographic signatures to enforce savings pool rules:
 
 ### Key Features
 
@@ -29,20 +29,26 @@ StreamSave uses blockchain smart contracts and cryptographic signatures to enfor
 ✅ **Trustless Distribution**: Cryptographic guarantees replace social trust
 ✅ **Transparent History**: All contributions and payouts recorded on Celo blockchain
 ✅ **Mobile-First**: Built on Celo for low fees and mobile accessibility
-✅ **Gasless Payments**: Users sign vouchers, app pays gas fees
+✅ **Gasless Payments**: Users sign vouchers, facilitator pays gas fees
 
 ### How It Works
 
 1. **Pool Creation** (Day 0):
-   - 10 participants join a 10-month ROSCA pool
-   - Each member signs **10 monthly contribution vouchers** ($50 × 10 months = $500 total)
-   - App signs **10 payout vouchers** (one per round: $500 to each member)
-   - **Total: 110 vouchers stored in facilitator** (not executed yet)
+   - **Creator initiates**: Someone creates a pool and invites friends/family
+   - **Group decides together**:
+     - Number of participants (5-20 supported)
+     - Contribution amount (e.g., $50, $100, custom)
+     - Payment period (weekly, bi-weekly, monthly, custom)
+     - Payout order (rotating, random, or voted)
+   - Each member signs **N contribution vouchers** (one per period × total periods)
+   - App signs **N payout vouchers** (one per round to each participant)
+   - **All vouchers stored in facilitator** (not executed yet)
+   - **Example**: 10 participants, $50/month, 10 months = 110 total vouchers (100 contributions + 10 payouts)
 
-2. **Monthly Settlements**:
-   - App requests facilitator to execute **Month 1 vouchers** (10 contributions + 1 payout)
-   - On-chain settlement: 10 × $50 → $500 sent to first recipient
-   - Process repeats monthly until all 10 rounds complete
+2. **Periodic Settlements**:
+   - App requests facilitator to execute **Period 1 vouchers** (N contributions + 1 payout)
+   - On-chain settlement: Collect all contributions → Send pool amount to first recipient
+   - Process repeats each period until all participants receive their payout
 
 3. **Blockchain Guarantees**:
    - Vouchers are cryptographically signed (cannot be forged)
@@ -84,76 +90,209 @@ StreamSave uses blockchain smart contracts and cryptographic signatures to enfor
 ### Use Cases
 
 1. **Community Savings Groups**:
-   - 10 informal workers pool $50/month
-   - Each month, one member receives $500
+   - Group of informal workers pool funds regularly (weekly/monthly)
+   - Each period, one member receives the full pool amount
    - Transparent, trustless, mobile-accessible
+   - **Flexible**: Any number of participants, any contribution amount, any period
 
 2. **Emergency Funds**:
    - Family members contribute to shared emergency pool
    - Predetermined payout order or on-demand withdrawals
    - No intermediary required
+   - **Customizable**: Adapt period to group needs (bi-weekly, monthly, etc.)
 
 3. **Microcredit Circles**:
    - Small business owners access capital
    - Interest-free loans from savings pool
    - Built-in repayment enforcement
+   - **Scalable**: 5-20 participants supported
 
-### System Components
+### System Architecture
 
+```mermaid
+graph TB
+    subgraph "Frontend Layer"
+        UI[Next.js Web App]
+        Wallet[RainbowKit + Wagmi]
+    end
+
+    subgraph "Blockchain Layer - Celo Mainnet"
+        Contract[StreamSavePool Contract]
+        USDC[USDC EIP-3009 Contract<br/>0xcebA9300f2b948710d2653dD7B07f33A8B32118C]
+    end
+
+    subgraph "x402 Protocol Layer"
+        Facilitator[Custom402Facilitator<br/>localhost:3005]
+        VoucherDB[(Voucher Storage<br/>scheme: deferred)]
+    end
+
+    subgraph "Participants"
+        P1[Participant 1]
+        P2[Participant 2]
+        P3[Participant N]
+    end
+
+    P1 -->|Sign Contribution Vouchers| Facilitator
+    P2 -->|Sign Contribution Vouchers| Facilitator
+    P3 -->|Sign Contribution Vouchers| Facilitator
+
+    UI -->|Create Pool| Contract
+    UI -->|Request Settlement| Facilitator
+
+    Facilitator -->|Store Vouchers| VoucherDB
+    Facilitator -->|Execute Settlements| USDC
+
+    Contract -->|Pool State| VoucherDB
+    USDC -->|transferWithAuthorization| Contract
+
+    Wallet -->|Connect Wallet| UI
+
+    style USDC fill:#2ecc71
+    style Contract fill:#3498db
+    style Facilitator fill:#e74c3c
+    style VoucherDB fill:#f39c12
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     StreamSave ROSCA Flow                    │
-└─────────────────────────────────────────────────────────────┘
 
-DAY 0: Setup Phase
-──────────────────────────────────────────────────────────────
-┌──────────────┐
-│ 10 Participants │ Each signs 10 contribution vouchers
-└───────┬──────┘   ($50/month × 10 months)
-        │
-        ├─► Voucher 1: Jan 1-31, $50 to Pool
-        ├─► Voucher 2: Feb 1-28, $50 to Pool
-        ├─► ...
-        └─► Voucher 10: Oct 1-31, $50 to Pool
-                │
-                ▼
-        ┌──────────────────┐
-        │ Custom402Facilitator │ Stores 100 contribution vouchers
-        │  (localhost:3005)    │ scheme: "deferred"
-        └──────────────────┘
-                ▲
-                │
-┌───────────────┴───┐
-│   App Wallet      │ Signs 10 payout vouchers
-└───────────────────┘   ($500/month to each participant)
-        │
-        ├─► Payout 1: Jan, $500 to Alice
-        ├─► Payout 2: Feb, $500 to Bob
-        ├─► ...
-        └─► Payout 10: Oct, $500 to Jane
+### Pool Creation Flow (Day 0)
 
-MONTHLY EXECUTION (e.g., February 1st)
-──────────────────────────────────────────────────────────────
-┌───────────────┐
-│ StreamSave App│ POST /deferred/settle
-└───────┬───────┘   {
-        │             network: "celo",
-        │             validAt: "2024-01-15T00:00:00Z",
-        │             payer: "0xAlice",
-        │             payee: "0xPool"
-        │           }
-        ▼
-┌──────────────────┐
-│   Facilitator    │ Filters vouchers by timestamp
-│ (localhost:3005) │ • Finds 10 January contribution vouchers
-└────────┬─────────┘ • Executes on-chain settlement
-         │
-         ▼
-┌──────────────────────────┐
-│  Celo Mainnet (42220)    │ transferWithAuthorization()
-│  USDC Contract           │ • 10 participants → Pool ($500)
-│  (EIP-3009)              │ • Pool → Alice ($500)
-└──────────────────────────┘
+```mermaid
+sequenceDiagram
+    actor Alice as Participant (Alice)
+    actor Bob as Participant (Bob)
+    participant UI as StreamSave UI
+    participant Wallet as User Wallet
+    participant Contract as StreamSavePool Contract
+    participant Facilitator as x402 Facilitator
+    participant USDC as USDC (EIP-3009)
+
+    Note over Alice,USDC: Day 0: Pool Setup Phase
+
+    Alice->>UI: Create New Pool
+    UI->>Alice: Pool Details Form<br/>(amount, duration, participants)
+
+    Alice->>Wallet: Sign Pool Creation Tx
+    Wallet->>Contract: createPool(merkleRoot, amount, rate, duration)
+    Contract-->>UI: Pool Created (poolId: 1)
+
+    Note over Alice,Facilitator: Participants Sign Contribution Vouchers
+
+    Alice->>Wallet: Sign 10 Monthly Vouchers
+    Wallet->>Wallet: EIP-712 Sign TypedData<br/>(Alice→Pool, $50/month × 10)
+
+    Alice->>Facilitator: POST /deferred/verify<br/>{vouchers[], scheme: "deferred"}
+    Facilitator->>Facilitator: Validate Signatures
+    Facilitator-->>Alice: 10 Vouchers Stored ✓
+
+    Bob->>Wallet: Sign 10 Monthly Vouchers
+    Wallet->>Wallet: EIP-712 Sign TypedData<br/>(Bob→Pool, $50/month × 10)
+
+    Bob->>Facilitator: POST /deferred/verify<br/>{vouchers[], scheme: "deferred"}
+    Facilitator->>Facilitator: Validate Signatures
+    Facilitator-->>Bob: 10 Vouchers Stored ✓
+
+    Note over UI,Facilitator: App Signs Payout Vouchers
+
+    UI->>Wallet: Sign 10 Payout Vouchers<br/>(Pool→Participants)
+    Wallet->>Wallet: EIP-712 Sign TypedData<br/>(Pool→Alice $500, Pool→Bob $500, ...)
+
+    UI->>Facilitator: POST /deferred/verify<br/>{payoutVouchers[], scheme: "deferred"}
+    Facilitator->>Facilitator: Validate Signatures
+    Facilitator-->>UI: 10 Payout Vouchers Stored ✓
+
+    Note over Alice,USDC: Pool Ready: 110 Vouchers Signed & Stored
+```
+
+### Monthly Settlement Flow
+
+```mermaid
+sequenceDiagram
+    actor Admin as Pool Admin
+    participant UI as StreamSave UI
+    participant Facilitator as x402 Facilitator
+    participant USDC as USDC Contract (EIP-3009)
+    participant Contract as StreamSavePool Contract
+    actor Alice as Alice (Round 1 Recipient)
+
+    Note over Admin,Alice: Month 1: Settlement Execution
+
+    Admin->>UI: Execute Round 1
+    UI->>Facilitator: POST /streamsave/pool/execute-round<br/>{poolId: 1, round: 1}
+
+    Note over Facilitator,USDC: Step 1: Collect Contributions
+
+    Facilitator->>Facilitator: Filter Month 1 Vouchers<br/>(nonce contains "_month_1")
+
+    loop 10 Participants
+        Facilitator->>USDC: transferWithAuthorization()<br/>(Participant→Pool, $50, signature)
+        USDC->>USDC: Verify EIP-712 Signature
+        USDC->>Contract: Transfer $50 USDC
+    end
+
+    USDC-->>Facilitator: 10 Contributions Complete ($500 total)
+
+    Note over Facilitator,USDC: Step 2: Distribute Payout
+
+    Facilitator->>Facilitator: Get Round 1 Payout Voucher<br/>(Pool→Alice, $500)
+
+    Facilitator->>USDC: transferWithAuthorization()<br/>(Pool→Alice, $500, signature)
+    USDC->>USDC: Verify EIP-712 Signature
+    USDC->>Alice: Transfer $500 USDC
+
+    USDC-->>Facilitator: Payout Complete
+
+    Facilitator->>Facilitator: Mark Vouchers as Settled
+    Facilitator-->>UI: Round 1 Complete ✓<br/>{contributionTx, payoutTx}
+
+    UI-->>Admin: Settlement Success<br/>Alice received $500
+
+    Note over Admin,Alice: Repeat monthly for 10 rounds
+```
+
+### EIP-3009 Gasless Payment Flow
+
+```mermaid
+sequenceDiagram
+    actor User as Participant
+    participant Wallet as User Wallet (Off-chain)
+    participant UI as StreamSave UI
+    participant Facilitator as x402 Facilitator
+    participant USDC as USDC Contract<br/>(Celo Mainnet)
+    participant Pool as StreamSavePool Contract
+
+    Note over User,Pool: EIP-3009: Gasless Transfer Authorization
+
+    User->>UI: Initiate Contribution
+    UI->>UI: Generate Voucher Data<br/>{from, to, value, validAfter, validBefore, nonce}
+
+    UI->>Wallet: Request EIP-712 Signature
+    Wallet->>Wallet: Sign TypedData<br/>Domain: USDC Contract<br/>Types: TransferWithAuthorization
+
+    Wallet-->>UI: Signature (v, r, s)
+
+    Note over UI,Facilitator: Store Signed Voucher (No Gas Required)
+
+    UI->>Facilitator: POST /deferred/verify<br/>{voucher, signature, scheme: "deferred"}
+    Facilitator->>Facilitator: Validate Signature<br/>(off-chain verification)
+    Facilitator-->>UI: Voucher Stored ✓
+
+    Note over User,Pool: Later: Facilitator Executes Settlement (Pays Gas)
+
+    Facilitator->>USDC: transferWithAuthorization(<br/>from: User,<br/>to: Pool,<br/>value: amount,<br/>validAfter: timestamp,<br/>validBefore: timestamp,<br/>nonce: unique,<br/>v, r, s<br/>)
+
+    USDC->>USDC: Verify EIP-712 Signature<br/>Recover signer == from address
+    USDC->>USDC: Check Authorization Valid<br/>(validAfter ≤ now ≤ validBefore)
+    USDC->>USDC: Check Nonce Not Used
+
+    alt Valid Authorization
+        USDC->>Pool: Transfer Tokens
+        USDC->>USDC: Mark Nonce as Used
+        USDC-->>Facilitator: Transfer Success ✓
+        Note over User,Pool: User pays $0 gas - Facilitator pays gas
+    else Invalid
+        USDC-->>Facilitator: Revert: Invalid signature/expired/used
+    end
+
+    Note over User,Pool: Benefits: Gasless UX + Pre-signed Commitments
 ```
 
 ### Voucher Architecture
@@ -242,7 +381,7 @@ npm run dev
    # Tests with 0.001 USDC per wallet
    ```
 
-5. **Create ROSCA Pool** (Coming soon - Web UI):
+5. **Create StreamSave Pool** (Coming soon - Web UI):
    ```bash
    # For now: Use API directly
    curl -X POST http://localhost:3005/streamsave/pool/create \
@@ -250,7 +389,7 @@ npm run dev
      -d @test/create-pool.json
    ```
 
-4. **Execute Monthly Round**:
+6. **Execute Monthly Round**:
    ```bash
    curl -X POST http://localhost:3005/streamsave/pool/execute-round \
      -H "Content-Type: application/json" \
@@ -265,8 +404,8 @@ npm run dev
 
 ## 📚 Documentation
 
-- **[SIMPLIFIED-FLOW.md](./docs/SIMPLIFIED-FLOW.md)** - Step-by-step ROSCA flow explanation
-- **[ROSCA-FLOW.md](./docs/ROSCA-FLOW.md)** - Detailed voucher architecture
+- **[SIMPLIFIED-FLOW.md](./docs/SIMPLIFIED-FLOW.md)** - Step-by-step pool flow explanation
+- **[POOL-FLOW.md](./docs/POOL-FLOW.md)** - Detailed voucher architecture
 - **[X402-INTEGRATION.md](./docs/X402-INTEGRATION.md)** - x402 protocol integration guide
 - **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - System architecture details
 - **[Facilitator Spec](../../Custom402Facilitator/docs/STREAMSAVE-BACKWARD-COMPATIBLE-SPEC.md)** - Backend implementation details
@@ -361,7 +500,7 @@ npm run dev
 - [ ] Dynamic payout ordering (auction/voting)
 - [ ] DeFi yield integration (Aave on Celo)
 - [ ] Cross-chain support (Base, Polygon)
-- [ ] Integration with Flare FAssets (BTC-backed ROSCAs)
+- [ ] Integration with Flare FAssets (BTC-backed savings pools)
 - [ ] Privacy features (zero-knowledge proofs)
 
 ---
@@ -392,7 +531,7 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 - **Celo Foundation**: Mobile-first blockchain platform with native USDC
 - **Circle**: USDC with EIP-3009 gasless transfer support
 - **x402 Protocol**: HTTP-based deferred payment framework
-- **Traditional ROSCAs**: Community savings model inspiration (susu, chit funds, tandas)
+- **Traditional Savings Circles**: Community savings model inspiration (susu, chit funds, tandas, ROSCAs)
 
 ---
 
