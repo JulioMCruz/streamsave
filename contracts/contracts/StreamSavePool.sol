@@ -4,12 +4,17 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interfaces/IERC3009.sol";
 
 /**
  * @title StreamSavePool
  * @notice Privacy-first savings pools with income streaming and microcredits
- * @dev Uses zero-knowledge nullifiers for participant privacy, integrated with x402 protocol
+ * @dev This contract ONLY tracks payments. USDC transfers are handled externally by x402 facilitator.
+ *
+ * Payment Flow:
+ * 1. User signs EIP-3009 authorization (off-chain)
+ * 2. x402 Facilitator calls USDC.transferWithAuthorization() directly
+ * 3. USDC arrives at this contract
+ * 4. User/Facilitator calls our functions to track the payment
  */
 contract StreamSavePool is ReentrancyGuard, Ownable {
 
@@ -52,9 +57,6 @@ contract StreamSavePool is ReentrancyGuard, Ownable {
     // poolId => array of nullifiers (for rotation)
     mapping(uint256 => bytes32[]) public poolNullifiers;
 
-    // x402 facilitator address for payment verification
-    address public x402Facilitator;
-
     // ============ Events ============
 
     event PoolCreated(
@@ -91,8 +93,7 @@ contract StreamSavePool is ReentrancyGuard, Ownable {
 
     // ============ Constructor ============
 
-    constructor(address _x402Facilitator) Ownable(msg.sender) {
-        x402Facilitator = _x402Facilitator;
+    constructor() Ownable(msg.sender) {
         nextPoolId = 1;
     }
 
@@ -182,10 +183,12 @@ contract StreamSavePool is ReentrancyGuard, Ownable {
     // ============ Streaming Contributions ============
 
     /**
-     * @notice Stream contribution to pool (called periodically or on-demand)
+     * @notice Track stream contribution (USDC already transferred by facilitator)
+     * @dev This function ONLY tracks the payment. The facilitator must have already called
+     *      USDC.transferWithAuthorization() to send tokens to this contract.
      * @param _poolId Pool ID
      * @param _nullifier Participant nullifier
-     * @param _amount Amount to contribute from streamed balance
+     * @param _amount Amount that was transferred
      */
     function streamContribution(
         uint256 _poolId,
@@ -204,71 +207,13 @@ contract StreamSavePool is ReentrancyGuard, Ownable {
 
         require(_amount <= streamedAmount, "Insufficient streamed balance");
 
-        // Update participant state
-        participant.lastStreamTime = block.timestamp;
-        participant.totalStreamed += _amount;
-
-        // Transfer tokens to contract
-        IERC20(pool.token).transferFrom(msg.sender, address(this), _amount);
-
-        pool.totalContributed += _amount;
-
-        emit StreamContribution(_poolId, _nullifier, _amount, block.timestamp);
-    }
-
-    /**
-     * @notice Stream contribution using EIP-3009 transferWithAuthorization (gasless)
-     * @param _poolId Pool ID
-     * @param _nullifier Participant nullifier
-     * @param _from Payer's address
-     * @param _amount Amount to contribute
-     * @param _validAfter Authorization valid after timestamp
-     * @param _validBefore Authorization valid before timestamp
-     * @param _nonce Unique nonce for authorization
-     * @param _v Signature v component
-     * @param _r Signature r component
-     * @param _s Signature s component
-     */
-    function streamContributionWithAuth(
-        uint256 _poolId,
-        bytes32 _nullifier,
-        address _from,
-        uint256 _amount,
-        uint256 _validAfter,
-        uint256 _validBefore,
-        bytes32 _nonce,
-        uint8 _v,
-        bytes32 _r,
-        bytes32 _s
-    ) external nonReentrant {
-        Pool storage pool = pools[_poolId];
-        Participant storage participant = participants[_poolId][_nullifier];
-
-        require(pool.isActive, "Pool not active");
-        require(participant.isActive, "Participant not active");
-
-        // Calculate streamed amount since last update
-        uint256 timeElapsed = block.timestamp - participant.lastStreamTime;
-        uint256 streamedAmount = timeElapsed * pool.streamRate;
-
-        require(_amount <= streamedAmount, "Insufficient streamed balance");
+        // Verify USDC was actually received (facilitator already sent it)
+        uint256 contractBalance = IERC20(pool.token).balanceOf(address(this));
+        require(contractBalance >= _amount, "Insufficient contract balance");
 
         // Update participant state
         participant.lastStreamTime = block.timestamp;
         participant.totalStreamed += _amount;
-
-        // Execute gasless transfer using EIP-3009
-        IERC3009(pool.token).transferWithAuthorization(
-            _from,
-            address(this),
-            _amount,
-            _validAfter,
-            _validBefore,
-            _nonce,
-            _v,
-            _r,
-            _s
-        );
 
         pool.totalContributed += _amount;
 
@@ -358,12 +303,6 @@ contract StreamSavePool is ReentrancyGuard, Ownable {
         Pool memory pool = pools[_poolId];
         if (pool.currentRound >= pool.totalParticipants) return bytes32(0);
         return poolNullifiers[_poolId][pool.currentRound % pool.totalParticipants];
-    }
-
-    // ============ Admin Functions ============
-
-    function updateX402Facilitator(address _newFacilitator) external onlyOwner {
-        x402Facilitator = _newFacilitator;
     }
 
     // ============ Internal Functions ============
